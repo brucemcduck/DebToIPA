@@ -34,7 +34,7 @@ jobs:
           zip -r app.ipa Payload/
 
       - name: Upload IPA Artifact
-        uses: actions/abstract-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: converted-ipa
           path: app.ipa

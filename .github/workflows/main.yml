@@ -1,0 +1,40 @@
+name: Convert .deb to .ipa
+
+on:
+  workflow_dispatch:
+    inputs:
+      deb_url:
+        description: https://mirrors.kodi.tv/releases/darwin/ios-arm64/org.xbmc.kodi-ios_21.3_iphoneos-arm64.deb?https=1
+        required: true
+        type: string
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download and Extract DEB
+        run: |
+          mkdir deb_extract payload_dir
+          curl -L -o package.deb "${{ github.event.inputs.deb_url }}"
+          ar x package.deb || tar -xf package.deb
+          tar -xf data.tar.* -C deb_extract/
+
+      - name: Build IPA Structure
+        run: |
+          mkdir Payload
+          APP_FOLDER=$(find deb_extract/ -type d -name "*.app" | head -n 1)
+          if [ -z "$APP_FOLDER" ]; then
+            echo "Error: No .app bundle found inside the DEB file."
+            exit 1
+          fi
+          cp -r "$APP_FOLDER" Payload/
+          zip -r app.ipa Payload/
+
+      - name: Upload IPA Artifact
+        uses: actions/abstract-artifact@v4
+        with:
+          name: converted-ipa
+          path: app.ipa
